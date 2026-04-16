@@ -12,6 +12,7 @@
 ## 🌟 The MAN Is...
 
 **THE** network monitoring solution that puts YOU in control:
+
 - **The Modern Alternative** to MikroTik's The Dude
 - **The Simplest** setup: `node src/server.js` and you're running
 - **The Fastest** startup: No TypeScript compilation, instant dev mode
@@ -36,36 +37,42 @@
 ## 🎯 Core Features
 
 ### Network Discovery
+
 - **Auto-scan CIDR ranges** — Discover entire subnets in seconds
 - **Multi-protocol support** — ICMP, SNMPv1/v2c/v3, RouterOS API, HTTP/S
 - **Layer 2 topology** — CDP/LLDP/EDP parsing for switch connections
 - **MikroTik Dude import** — One-click migration from existing Dude servers
 
 ### Real-Time Monitoring
+
 - **Sub-second updates** — WebSocket push, no polling delays
 - **10,000+ device capacity** — Distributed polling with BullMQ workers
 - **Smart polling** — Adaptive intervals (1-300s), dependency-aware
 - **Historical metrics** — 1+ year retention with TimescaleDB
 
 ### Interactive Topology Maps
+
 - **D3.js force-directed graphs** — Beautiful, physics-based layouts
 - **Drag-and-drop editing** — Position devices manually
 - **Submaps** — Hierarchical organization (datacenter → rack → device)
 - **Background images** — Import floorplans, rack diagrams
 
 ### Intelligent Alerting
+
 - **Threshold-based rules** — Latency, uptime, SNMP OID values
 - **Escalation chains** — Email → Slack → PagerDuty
 - **Smart suppression** — Parent-child device relationships
 - **Recovery notifications** — Get alerted when issues resolve
 
 ### Enterprise Security
+
 - **Role-based access control (RBAC)** — Admin, Editor, Viewer roles
 - **JWT authentication** — Secure API access
 - **Encrypted configs** — SNMPv3, TLS, SSH key management
 - **Audit logging** — Track all user actions
 
 ### Plugin Extensibility
+
 - **Custom pollers** — Add new monitoring protocols
 - **MIB loader** — Import vendor-specific SNMP MIBs
 - **Action scripts** — Execute commands on alerts
@@ -223,32 +230,32 @@ await alertRules.create({
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    CLIENT LAYER                              │
-│  React Web App (Vite) | Tauri Desktop | Mobile PWA          │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│                       CLIENT LAYER                        │
+│     React Web App (Vite) | Tauri Desktop | Mobile PWA     │
+└───────────────────────────────────────────────────────────┘
                               │
                     WebSocket + REST API
                               │
-┌─────────────────────────────────────────────────────────────┐
-│                  APPLICATION LAYER                           │
-│  Fastify API Server | Socket.io | JWT Auth                  │
-│                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │ Discovery   │  │ Monitoring  │  │ Alerting    │        │
-│  │ Service     │  │ Service     │  │ Service     │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                     APPLICATION LAYER                   │
+│     Fastify API Server | Socket.io | JWT Auth           │
+│                                                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
+│  │ Discovery   │  │ Monitoring  │  │ Alerting    │      │
+│  │ Service     │  │ Service     │  │ Service     │      │
+│  └─────────────┘  └─────────────┘  └─────────────┘      │
+└─────────────────────────────────────────────────────────┘
                               │
-┌─────────────────────────────────────────────────────────────┐
-│                     DATA LAYER                               │
-│  PostgreSQL + TimescaleDB | Redis (Cache/Jobs)              │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                         DATA LAYER                      │
+│      PostgreSQL + TimescaleDB | Redis (Cache/Jobs)      │
+└─────────────────────────────────────────────────────────┘
                               │
-┌─────────────────────────────────────────────────────────────┐
-│                   POLLING LAYER                              │
-│  BullMQ Workers | ICMP | SNMP | HTTP | SSH | RouterOS       │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                   POLLING LAYER                         │
+│  BullMQ Workers | ICMP | SNMP | HTTP | SSH | RouterOS   │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -256,7 +263,7 @@ await alertRules.create({
 ## 📊 Performance Benchmarks
 
 | Metric | The MAN | Competitors |
-|--------|---------|-------------|
+| -------- | -------- | -------- |
 | Startup Time | <2s | 10-30s |
 | Scan 1000 IPs | <5min | 10-20min |
 | Map Render (1000 devices) | <1s | 3-10s |
@@ -326,6 +333,7 @@ docker-compose up -d --build
 ## 🤝 Contributing
 
 We welcome contributions! Pure JavaScript means:
+
 - ✅ No TypeScript transpilation issues
 - ✅ Easier debugging (what you see is what runs)
 - ✅ Lower barrier to entry
@@ -356,6 +364,7 @@ git push origin feature/my-awesome-feature
 ## 📝 Roadmap
 
 ### v0.1.0 (Current) — MVP
+
 - [x] Network discovery (ICMP, SNMP, RouterOS)
 - [x] Ping monitoring with metrics
 - [x] D3.js interactive maps
@@ -365,6 +374,7 @@ git push origin feature/my-awesome-feature
 - [ ] Dude import (80% complete)
 
 ### v0.5.0 — Beta (4 weeks)
+
 - [ ] Full SNMP poller (ifTable, custom OIDs)
 - [ ] SSH/Telnet console proxy
 - [ ] Advanced alerting (escalations, schedules)
@@ -373,6 +383,7 @@ git push origin feature/my-awesome-feature
 - [ ] Mobile app (PWA)
 
 ### v1.0.0 — Production (8 weeks)
+
 - [ ] 10,000+ device validation
 - [ ] Layer 2 topology (CDP/LLDP)
 - [ ] NetFlow/sFlow integration
@@ -381,6 +392,7 @@ git push origin feature/my-awesome-feature
 - [ ] Video tutorials
 
 ### Future
+
 - [ ] Multi-site federation
 - [ ] Custom dashboards
 - [ ] API rate limiting
@@ -393,6 +405,7 @@ git push origin feature/my-awesome-feature
 MIT License - Free forever, no restrictions.
 
 **The MAN** believes in:
+
 - ✅ Open source (MIT)
 - ✅ Open data (PostgreSQL, no vendor lock-in)
 - ✅ Open architecture (plugins, REST API)
