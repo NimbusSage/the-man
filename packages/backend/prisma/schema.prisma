@@ -1,0 +1,211 @@
+// packages/backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  username      String    @unique
+  email         String?   @unique
+  passwordHash  String    @map("password_hash")
+  role          UserRole  @default(VIEWER)
+  permissions   Json?
+  lastLogin     DateTime? @map("last_login")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  alerts        Alert[]   @relation("AlertAcknowledgedBy")
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model Device {
+  id          String      @id @default(uuid())
+  name        String
+  ip          String
+  macAddress  String?     @map("mac_address")
+  deviceType  String      @map("device_type")
+  vendor      String?
+  model       String?
+  osVersion   String?     @map("os_version")
+  parentId    String?     @map("parent_id")
+  mapId       String?     @map("map_id")
+  positionX   Float?      @map("position_x")
+  positionY   Float?      @map("position_y")
+  icon        String?
+  status      DeviceStatus @default(UNKNOWN)
+  lastSeen    DateTime?   @map("last_seen")
+  metadata    Json?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  parent      Device?     @relation("DeviceHierarchy", fields: [parentId], references: [id])
+  children    Device[]    @relation("DeviceHierarchy")
+  map         Map?        @relation(fields: [mapId], references: [id])
+  services    Service[]
+  alerts      Alert[]
+  linksSource Link[]      @relation("LinkSource")
+  linksTarget Link[]      @relation("LinkTarget")
+
+  @@index([ip])
+  @@index([status])
+  @@index([mapId])
+  @@map("devices")
+}
+
+enum DeviceStatus {
+  UP
+  DOWN
+  WARNING
+  UNKNOWN
+}
+
+model Service {
+  id          String        @id @default(uuid())
+  deviceId    String        @map("device_id")
+  name        String
+  type        String
+  config      Json
+  interval    Int           @default(60)
+  timeout     Int           @default(5)
+  enabled     Boolean       @default(true)
+  status      ServiceStatus @default(UNKNOWN)
+  lastCheck   DateTime?     @map("last_check")
+  lastResult  Json?         @map("last_result")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  device      Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  alerts      Alert[]
+  alertRules  AlertRule[]
+
+  @@index([deviceId])
+  @@index([enabled])
+  @@map("services")
+}
+
+enum ServiceStatus {
+  OK
+  WARNING
+  CRITICAL
+  UNKNOWN
+}
+
+model Map {
+  id              String    @id @default(uuid())
+  name            String
+  parentMapId     String?   @map("parent_map_id")
+  backgroundImage String?   @map("background_image")
+  layoutType      String    @default("auto") @map("layout_type")
+  viewport        Json?
+  metadata        Json?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  parentMap       Map?      @relation("MapHierarchy", fields: [parentMapId], references: [id])
+  submaps         Map[]     @relation("MapHierarchy")
+  devices         Device[]
+  links           Link[]
+
+  @@map("maps")
+}
+
+model Link {
+  id               String   @id @default(uuid())
+  mapId            String   @map("map_id")
+  sourceDeviceId   String   @map("source_device_id")
+  targetDeviceId   String   @map("target_device_id")
+  sourceInterface  String?  @map("source_interface")
+  targetInterface  String?  @map("target_interface")
+  linkType         String   @map("link_type")
+  bandwidthMbps    Int?     @map("bandwidth_mbps")
+  label            String?
+  metadata         Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  map              Map      @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  sourceDevice     Device   @relation("LinkSource", fields: [sourceDeviceId], references: [id], onDelete: Cascade)
+  targetDevice     Device   @relation("LinkTarget", fields: [targetDeviceId], references: [id], onDelete: Cascade)
+
+  @@index([mapId])
+  @@map("links")
+}
+
+model Alert {
+  id              String       @id @default(uuid())
+  deviceId        String       @map("device_id")
+  serviceId       String?      @map("service_id")
+  severity        AlertSeverity
+  title           String
+  message         String?
+  status          AlertStatus  @default(ACTIVE)
+  triggeredAt     DateTime     @default(now()) @map("triggered_at")
+  acknowledgedAt  DateTime?    @map("acknowledged_at")
+  acknowledgedBy  String?      @map("acknowledged_by")
+  resolvedAt      DateTime?    @map("resolved_at")
+  metadata        Json?
+
+  device          Device       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  service         Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  acknowledger    User?        @relation("AlertAcknowledgedBy", fields: [acknowledgedBy], references: [id])
+
+  @@index([status])
+  @@index([deviceId])
+  @@map("alerts")
+}
+
+enum AlertSeverity {
+  CRITICAL
+  WARNING
+  INFO
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model AlertRule {
+  id               String   @id @default(uuid())
+  name             String
+  serviceId        String   @map("service_id")
+  condition        Json
+  severity         AlertSeverity
+  enabled          Boolean  @default(true)
+  actions          Json?
+  cooldownSeconds  Int      @default(300) @map("cooldown_seconds")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  service          Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("alert_rules")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  action       String
+  resourceType String?  @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  details      Json?
+  ipAddress    String?  @map("ip_address")
+  timestamp    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@index([timestamp])
+  @@map("audit_logs")
+}

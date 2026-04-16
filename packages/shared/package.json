@@ -1,0 +1,19 @@
+{
+  "name": "@theman/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./constants": "./src/constants.js",
+    "./utils": "./src/utils/index.js"
+  },
+  "scripts": {
+    "lint": "eslint src --ext .js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  }
+}

@@ -18,6 +18,7 @@
     "dev:web": "pnpm --filter @theman/web dev",
     "dev:backend": "pnpm --filter @theman/backend dev",
     "build": "pnpm --filter @theman/backend build && pnpm --filter @theman/web build",
+    "build:desktop": "pnpm --filter @theman/desktop tauri build",
     "test": "NODE_OPTIONS=--experimental-vm-modules vitest",
     "lint": "eslint . --ext .js,.jsx",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
@@ -27,8 +28,13 @@
     "db:seed": "pnpm --filter @theman/backend db:seed"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^8.2.2",
-    "eslint": "^8.56.0"
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.1.1",
+    "vitest": "^1.1.0"
   },
   "engines": {
     "node": ">=20.0.0",
