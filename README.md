@@ -98,7 +98,7 @@ cargo --version  # Rust toolchain
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/the-man/the-man.git
+git clone https://git.cloud.bearhug.farm/NimbusSage/The-MAN.git
 cd the-man
 pnpm install
 
@@ -341,7 +341,7 @@ We welcome contributions! Pure JavaScript means:
 
 ```bash
 # Fork and clone
-git clone https://github.com/yourusername/the-man.git
+git clone https://git.cloud.bearhug.farm/NimbusSage/The-MAN.git
 
 # Create feature branch
 git checkout -b feature/my-awesome-feature
@@ -417,7 +417,7 @@ MIT License - Free forever, no restrictions.
 
 - **Documentation:** [docs.theman.network](https://docs.theman.network)
 - **Discord:** [discord.gg/theman](https://discord.gg/theman)
-- **GitHub Issues:** [github.com/the-man/the-man/issues](https://github.com/the-man/the-man/issues)
+- **GitHub Issues:** [git.cloud.bearhug.farm/NimbusSage/The-MAN/issues](https://git.cloud.bearhug.farm/NimbusSage/The-MAN/issues)
 - **Email:** support@theman.network
 
 ---
