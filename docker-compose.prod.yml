@@ -74,7 +74,6 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
-    container_name: theman-worker
     restart: unless-stopped
     environment:
       NODE_ENV: production
