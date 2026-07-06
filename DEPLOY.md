@@ -28,7 +28,7 @@ docker compose -f docker-compose.prod.yml exec backend pnpm db:migrate
 docker compose -f docker-compose.prod.yml exec backend pnpm db:seed
 ```
 
-The web UI is served on port 80 (or whatever `HOST_WEB_PORT` is set to).
+The web UI is served on port 5173 (or whatever `HOST_WEB_PORT` is set to).
 
 ## Environment Configuration
 
@@ -56,7 +56,7 @@ CORS_ORIGINS=true
 # HOST_POSTGRES_PORT=5432
 # HOST_REDIS_PORT=6379
 # HOST_BACKEND_PORT=3000
-# HOST_WEB_PORT=80
+# HOST_WEB_PORT=5173
 ```
 
 > **Security:** Never use the default dev passwords. Generate secrets with `openssl rand -base64 48` and keep your `.env` file out of version control (it's already in `.gitignore`).
@@ -77,7 +77,7 @@ The admin credentials default to `admin` / `admin`. Change the password immediat
 
 ## Reverse Proxy & SSL
 
-The web service in `docker-compose.prod.yml` serves HTTP on port 80. You should terminate TLS at a reverse proxy.
+The web service in `docker-compose.prod.yml` serves HTTP on port 5173. You should terminate TLS at a reverse proxy.
 
 ### Option A: Caddy (recommended — automatic HTTPS)
 
