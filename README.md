@@ -1,283 +1,74 @@
-# 🔥 The MAN (The Monitoring of All Networks)
-
-**Modern, open-source network monitoring platform — Pure JavaScript, zero TypeScript**
+# The MAN (The Monitoring of All Networks)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
-[![Pure JavaScript](https://img.shields.io/badge/100%25-JavaScript-yellow)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![Zero TypeScript](https://img.shields.io/badge/TypeScript-0%25-red)](https://www.typescriptlang.org/)
 
----
+A free, open-source network monitoring platform, written in plain JavaScript.
 
-## 🌟 The MAN Is...
+## Why this exists
 
-**THE** network monitoring solution that puts YOU in control:
+MikroTik built The Dude, a lot of network engineers came to depend on it, and then MikroTik quietly let it die. 7.23.1 was the last release before it was declared end-of-life, and no replacement ships from MikroTik itself. If you're one of the people who kept a Dude server running past its expiration date because nothing else quite fit the job, this project is for you.
 
-- **The Modern Alternative** to MikroTik's The Dude
-- **The Simplest** setup: `node src/server.js` and you're running
-- **The Fastest** startup: No TypeScript compilation, instant dev mode
-- **The Most Open** platform: MIT license, pure JavaScript, no vendor lock-in
+The Dude grew up. It's still free. It's still built by network engineers, for network engineers, and it still imports your existing Dude database instead of making you start your topology from scratch.
 
----
+## What it does
 
-## ⚡ Why Pure JavaScript?
+- **Network discovery** - scan CIDR ranges over ICMP, SNMP, and the RouterOS API.
+- **Monitoring** - per-service polling with configurable intervals, WebSocket push for live status.
+- **Topology maps** - D3-based device maps with submaps for hierarchical networks (datacenter to rack to device).
+- **Alerting** - threshold rules with email notifications, and suppression so a downed switch doesn't page you for every device behind it.
+- **Dude migration** - upload your existing Dude `.db` file and it imports devices, services, maps, links, notes, outage history, and graph data directly into Postgres.
+- **RBAC and audit logging** - admin/editor/viewer roles, JWT auth, and a log of who changed what.
+- **Plugin pollers** - write a custom check in plain JavaScript, no build step.
 
-| TypeScript Projects | The MAN (Pure JS) |
-|---------------------|-------------------|
-| `tsc --watch` lag | Instant `--watch` mode |
-| 100MB+ node_modules | 45MB lighter install |
-| Type gymnastics | Straightforward code |
-| Build step required | Direct `node` execution |
-| Learning curve | JavaScript you know |
+Some of this (SNMP/RouterOS discovery in particular) is still catching up to the vision. See the roadmap below for what's actually wired up today versus what's next.
 
-**Result:** Faster development, easier debugging, simpler deployment.
+## Importing from Dude
 
----
+This is the part we built most recently, so it gets its own section.
 
-## 🎯 Core Features
+Dude stores almost everything as opaque binary blobs in a generic SQLite table. There's no public spec for the format, and MikroTik doesn't offer an API or CLI to get the data out any other way. We reverse-engineered it (building on prior work from the community, see Acknowledgments) and wrote a parser for it in plain JavaScript, plus a full transform into our own schema: devices, services, maps (with submap hierarchy), links, notes, outage history, and graph data at all four of Dude's retention resolutions.
 
-### Network Discovery
+We tested it against a real, years-old production Dude 7.23.1 database: 500MB, roughly 185,000 objects, 25,000+ devices, 19 million graph samples. It came back clean. Some links and older graph samples don't resolve, because the source database itself has dangling references to devices that were deleted years ago. That's a property of the data, not a bug in the importer; it logs and skips those cases rather than guessing.
 
-- **Auto-scan CIDR ranges** — Discover entire subnets in seconds
-- **Multi-protocol support** — ICMP, SNMPv1/v2c/v3, RouterOS API, HTTP/S
-- **Layer 2 topology** — CDP/LLDP/EDP parsing for switch connections
-- **MikroTik Dude import** — One-click migration from existing Dude servers
+To use it: log in, click "Import from Dude," and pick your `.db` file (gzipped exports work too). The import runs as a background job and the UI polls for status, since a database that size takes a few minutes to process.
 
-### Real-Time Monitoring
+## Quick start
 
-- **Sub-second updates** — WebSocket push, no polling delays
-- **10,000+ device capacity** — Distributed polling with BullMQ workers
-- **Smart polling** — Adaptive intervals (1-300s), dependency-aware
-- **Historical metrics** — 1+ year retention with TimescaleDB
-
-### Interactive Topology Maps
-
-- **D3.js force-directed graphs** — Beautiful, physics-based layouts
-- **Drag-and-drop editing** — Position devices manually
-- **Submaps** — Hierarchical organization (datacenter → rack → device)
-- **Background images** — Import floorplans, rack diagrams
-
-### Intelligent Alerting
-
-- **Threshold-based rules** — Latency, uptime, SNMP OID values
-- **Escalation chains** — Email → Slack → PagerDuty
-- **Smart suppression** — Parent-child device relationships
-- **Recovery notifications** — Get alerted when issues resolve
-
-### Enterprise Security
-
-- **Role-based access control (RBAC)** — Admin, Editor, Viewer roles
-- **JWT authentication** — Secure API access
-- **Encrypted configs** — SNMPv3, TLS, SSH key management
-- **Audit logging** — Track all user actions
-
-### Plugin Extensibility
-
-- **Custom pollers** — Add new monitoring protocols
-- **MIB loader** — Import vendor-specific SNMP MIBs
-- **Action scripts** — Execute commands on alerts
-- **Themeable UI** — CSS variables for custom branding
-
----
-
-## 🚀 Quick Start (< 5 Minutes)
-
-### Prerequisites
+You'll need Node 20+, pnpm 8+, and Docker (for Postgres and Redis).
 
 ```bash
-# Required
-node --version  # v20+ required
-pnpm --version  # v8+ required
-docker --version  # For PostgreSQL/Redis
-
-# Optional (for Tauri desktop)
-cargo --version  # Rust toolchain
-```
-
-### Installation
-
-```bash
-# 1. Clone and install
-git clone https://git.cloud.bearhug.farm/NimbusSage/The-MAN.git
+git clone https://github.com/NimbusSage/the-man.git
 cd the-man
 pnpm install
 
-# 2. Start infrastructure
 docker-compose up -d
 
-# 3. Initialize database
 cd packages/backend
 cp .env.example .env
 pnpm db:migrate
-pnpm db:seed  # Creates admin/admin user
+pnpm db:seed  # creates an admin/admin user
 
-# 4. Start servers
 cd ../..
-pnpm dev  # Starts backend + frontend
-
-# 5. Open browser
-open http://localhost:5173
-# Login: admin / admin
+pnpm dev  # starts backend + frontend
 ```
 
-**That's it!** No build step, no compilation, pure JavaScript magic.
+Open `http://localhost:5173` and log in with `admin` / `admin`.
 
----
-
-## 📖 Usage Examples
-
-### Discover Your Network
-
-```javascript
-// Via JavaScript API client
-import { discovery } from '@theman/web/services/api.js';
-
-const job = await discovery.startScan({
-  cidr: '192.168.1.0/24',
-  protocols: ['icmp', 'snmp'],
-  snmpCommunity: 'public',
-  parallelism: 50
-});
-
-console.log(`Scan started: ${job.jobId}`);
-```
-
-```bash
-# Via curl
-curl -X POST http://localhost:3000/api/v1/discovery/scan \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{
-    "cidr": "10.0.0.0/16",
-    "protocols": ["icmp", "snmp", "routeros"],
-    "timeout": 3000
-  }'
-```
-
-### Import from MikroTik Dude
-
-```javascript
-// Migrate your entire Dude server in one call
-import { discovery } from '@theman/web/services/api.js';
-
-const result = await discovery.importFromDude({
-  host: '192.168.88.1',
-  username: 'admin',
-  password: 'your_password'
-});
-
-console.log(`Imported ${result.devices.length} devices`);
-console.log(`Imported ${result.maps.length} maps`);
-```
-
-### Add Custom Monitoring
-
-```javascript
-// Create a ping service with custom thresholds
-import { services } from '@theman/web/services/api.js';
-
-await services.create({
-  deviceId: 'device-uuid',
-  name: 'Critical Link Monitoring',
-  type: 'ping',
-  interval: 10,  // Poll every 10 seconds
-  config: {
-    count: 3,
-    timeout: 1000,
-    warningThreshold: 50,   // Alert if >50ms
-    criticalThreshold: 100  // Critical if >100ms
-  }
-});
-```
-
-### Setup Alert Rules
-
-```javascript
-// Alert on device down for 5 minutes
-import { alertRules } from '@theman/web/services/api.js';
-
-await alertRules.create({
-  name: 'Core Router Down',
-  serviceId: 'service-uuid',
-  condition: {
-    type: 'status',
-    operator: '==',
-    value: 'down',
-    duration: 300  // 5 minutes
-  },
-  severity: 'critical',
-  actions: [
-    {
-      type: 'email',
-      to: 'ops@example.com',
-      subject: 'URGENT: Core router offline'
-    },
-    {
-      type: 'webhook',
-      url: 'https://hooks.slack.com/...',
-      method: 'POST',
-      body: { text: '🚨 Core router is down!' }
-    },
-    {
-      type: 'script',
-      command: '/usr/local/bin/failover.sh'
-    }
-  ]
-});
-```
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌───────────────────────────────────────────────────────────┐
-│                       CLIENT LAYER                        │
-│     React Web App (Vite) | Tauri Desktop | Mobile PWA     │
-└───────────────────────────────────────────────────────────┘
-                              │
-                    WebSocket + REST API
-                              │
-┌─────────────────────────────────────────────────────────┐
-│                     APPLICATION LAYER                   │
-│     Fastify API Server | Socket.io | JWT Auth           │
-│                                                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
-│  │ Discovery   │  │ Monitoring  │  │ Alerting    │      │
-│  │ Service     │  │ Service     │  │ Service     │      │
-│  └─────────────┘  └─────────────┘  └─────────────┘      │
-└─────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────┐
-│                         DATA LAYER                      │
-│      PostgreSQL + TimescaleDB | Redis (Cache/Jobs)      │
-└─────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────┐
-│                   POLLING LAYER                         │
-│  BullMQ Workers | ICMP | SNMP | HTTP | SSH | RouterOS   │
-└─────────────────────────────────────────────────────────┘
+Client:       React (Vite) web app, Tauri desktop, mobile PWA
+                    |  WebSocket + REST
+Application:  Fastify API, Socket.io, JWT auth
+                    |  Discovery / Monitoring / Alerting services
+Data:         PostgreSQL, Redis
+Polling:      ICMP / SNMP / HTTP / SSH / RouterOS pollers
 ```
 
----
+## Plugin development
 
-## 📊 Performance Benchmarks
-
-| Metric | The MAN | Competitors |
-| -------- | -------- | -------- |
-| Startup Time | <2s | 10-30s |
-| Scan 1000 IPs | <5min | 10-20min |
-| Map Render (1000 devices) | <1s | 3-10s |
-| API Response (P95) | <200ms | 500ms-2s |
-| Memory (10k devices) | <500MB | 2-4GB |
-| Install Size | <100MB | 500MB-2GB |
-
-*Tested on: 8-core CPU, 16GB RAM, SSD storage*
-
----
-
-## 🔌 Plugin Development
-
-Create custom pollers in pure JavaScript:
+Custom pollers are plain JavaScript classes:
 
 ```javascript
 // plugins/custom-http-poller/index.js
@@ -286,94 +77,62 @@ export class CustomHTTPPoller {
   async poll(device, service) {
     const response = await fetch(`https://${device.ip}/api/status`);
     const data = await response.json();
-    
+
     return {
       success: response.ok,
       status: response.ok ? 'ok' : 'critical',
       timestamp: new Date(),
       metrics: [
         { name: 'response_time', value: data.latency, unit: 'ms' },
-        { name: 'active_users', value: data.users, unit: 'count' }
-      ]
+        { name: 'active_users', value: data.users, unit: 'count' },
+      ],
     };
   }
 
   validateConfig(config) {
-    return config.endpoint && config.method;
+    return Boolean(config.endpoint && config.method);
   }
 
   getDefaultConfig() {
-    return {
-      endpoint: '/api/status',
-      method: 'GET',
-      timeout: 5000
-    };
+    return { endpoint: '/api/status', method: 'GET', timeout: 5000 };
   }
 }
 ```
 
----
-
-## 🐳 Docker Deployment
+## Docker deployment
 
 ```bash
-# Production deployment
 docker-compose -f docker-compose.prod.yml up -d
-
-# Scale polling workers
 docker-compose up -d --scale worker=5
-
-# Update to latest
-git pull
-docker-compose up -d --build
+git pull && docker-compose up -d --build
 ```
 
----
+## Contributing
 
-## 🤝 Contributing
-
-We welcome contributions! Pure JavaScript means:
-
-- ✅ No TypeScript transpilation issues
-- ✅ Easier debugging (what you see is what runs)
-- ✅ Lower barrier to entry
-- ✅ Faster development iterations
+Pull requests welcome. It's all plain JavaScript, no TypeScript build step, so `pnpm test` and a working `pnpm dev` are the bar for a PR.
 
 ```bash
-# Fork and clone
-git clone https://git.cloud.bearhug.farm/NimbusSage/The-MAN.git
-
-# Create feature branch
+git clone https://github.com/NimbusSage/the-man.git
 git checkout -b feature/my-awesome-feature
-
-# Make changes (all .js/.jsx files!)
-# No tsc, no type errors, just code
-
-# Test
+# make changes
 pnpm test
-
-# Commit (Conventional Commits)
 git commit -m "feat: add BGP neighbor monitoring"
-
-# Push and create PR
 git push origin feature/my-awesome-feature
 ```
 
----
+## Roadmap
 
-## 📝 Roadmap
-
-### v0.1.0 (Current) — MVP
+### v0.1.0 (current)
 
 - [x] Network discovery (ICMP, SNMP, RouterOS)
 - [x] Ping monitoring with metrics
-- [x] D3.js interactive maps
+- [x] D3 interactive maps
 - [x] WebSocket real-time updates
-- [x] PostgreSQL + TimescaleDB
+- [x] PostgreSQL storage (TimescaleDB extension enabled, hypertables not yet wired up)
 - [x] Basic alerting (email)
-- [ ] Dude import (80% complete)
+- [x] Dude database import (file upload, full device/service/map/link/note/history import)
 
-### v0.5.0 — Beta (4 weeks)
+### v0.5.0 (beta)
 
 - [ ] Full SNMP poller (ifTable, custom OIDs)
 - [ ] SSH/Telnet console proxy
@@ -382,64 +141,35 @@ git push origin feature/my-awesome-feature
 - [ ] Plugin marketplace
 - [ ] Mobile app (PWA)
 
-### v1.0.0 — Production (8 weeks)
+### v1.0.0
 
 - [ ] 10,000+ device validation
 - [ ] Layer 2 topology (CDP/LLDP)
 - [ ] NetFlow/sFlow integration
-- [ ] ML anomaly detection
+- [ ] Live Dude import over SSH/RouterOS API (today it's file-upload only)
 - [ ] Comprehensive docs
-- [ ] Video tutorials
 
-### Future
+### Later
 
 - [ ] Multi-site federation
 - [ ] Custom dashboards
-- [ ] API rate limiting
 - [ ] LDAP/SAML SSO
 
----
+## License
 
-## 📄 License
+MIT. Free forever, no catch, no tier that unlocks the features you actually need.
 
-MIT License - Free forever, no restrictions.
+## Support
 
-**The MAN** believes in:
+- **Issues and questions:** [GitHub Issues](https://github.com/NimbusSage/the-man/issues)
+- **Discussion:** [GitHub Discussions](https://github.com/NimbusSage/the-man/discussions)
 
-- ✅ Open source (MIT)
-- ✅ Open data (PostgreSQL, no vendor lock-in)
-- ✅ Open architecture (plugins, REST API)
-- ✅ Open development (public roadmap, community-driven)
+## Acknowledgments
 
----
-
-## 💬 Support
-
-- **Documentation:** [docs.theman.network](https://docs.theman.network)
-- **Discord:** [discord.gg/theman](https://discord.gg/theman)
-- **GitHub Issues:** [git.cloud.bearhug.farm/NimbusSage/The-MAN/issues](https://git.cloud.bearhug.farm/NimbusSage/The-MAN/issues)
-- **Email:** support@theman.network
+- MikroTik, for building The Dude in the first place, and for eventually giving us a reason to build its replacement.
+- [TheDudeToHuman](https://github.com/german77/TheDudeToHuman), whose reverse-engineering of Dude's object format saved us a lot of time when we built our own importer.
+- Everyone still running a Dude server past its expiration date. We see you.
 
 ---
 
-## 🙏 Acknowledgments
-
-- **MikroTik** for The Dude (inspiration)
-- **JavaScript community** for amazing libraries
-- Network engineers worldwide who deserve better tools
-
----
-
-## 🎯 Why "The MAN"?
-
-Because you need **THE** solution for monitoring **ALL** your **NETWORKS**.
-
-Also because we're taking back control from proprietary software. **You** are THE MAN now.
-
----
-
-**Built with ❤️ by network engineers, for network engineers**
-
-**Pure JavaScript. No TypeScript. No Compilation. Just Monitoring.**
-
-`node src/server.js` and **BE** The MAN! 🔥
+`node src/server.js`, and you're monitoring.

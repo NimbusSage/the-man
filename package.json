@@ -5,7 +5,7 @@
   "description": "The MAN (The Monitoring of All Networks) - Modern open-source network monitoring platform",
   "repository": {
     "type": "git",
-    "url": "https://github.com/the-man/the-man"
+    "url": "https://github.com/NimbusSage/the-man"
   },
   "license": "MIT",
   "type": "module",

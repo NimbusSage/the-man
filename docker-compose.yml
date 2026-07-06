@@ -4,9 +4,9 @@ services:
     image: timescale/timescaledb:latest-pg15
     container_name: theman-postgres
     environment:
-      POSTGRES_USER: theman
-      POSTGRES_PASSWORD: theman_dev_password
-      POSTGRES_DB: theman
+      POSTGRES_USER: ${POSTGRES_USER:-theman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-theman_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-theman}
     ports:
       - "5432:5432"
     volumes:
@@ -41,9 +41,9 @@ services:
     container_name: theman-backend
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://theman:theman_dev_password@postgres:5432/theman
+      DATABASE_URL: postgresql://${POSTGRES_USER:-theman}:${POSTGRES_PASSWORD:-theman_dev_password}@postgres:5432/${POSTGRES_DB:-theman}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       PORT: 3000
     ports:
       - "3000:3000"
@@ -56,7 +56,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: pnpm --filter @the-man/backend dev
+    command: pnpm --filter @theman/backend dev
 
   # BullMQ worker for polling
   worker:
@@ -66,7 +66,7 @@ services:
     container_name: theman-worker
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://theman:theman_dev_password@postgres:5432/theman
+      DATABASE_URL: postgresql://${POSTGRES_USER:-theman}:${POSTGRES_PASSWORD:-theman_dev_password}@postgres:5432/${POSTGRES_DB:-theman}
       REDIS_URL: redis://redis:6379
       WORKER_MODE: polling
     volumes:
@@ -78,7 +78,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: pnpm --filter @the-man/backend worker
+    command: pnpm --filter @theman/backend worker
 
   # Web frontend
   web:
@@ -97,7 +97,7 @@ services:
       - /app/apps/web/node_modules
     depends_on:
       - backend
-    command: pnpm --filter @the-man/web dev
+    command: pnpm --filter @theman/web dev
 
   # Optional: Prometheus for metrics
   prometheus:
@@ -121,7 +121,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards
