@@ -35,7 +35,11 @@ To use it: log in, click "Import from Dude," and pick your `.db` file (gzipped e
 
 ## Quick start
 
-You'll need Node 20+, pnpm 8+, and Docker (for Postgres and Redis).
+You'll need(example commands for debian based linux):
+
+1. Node 20+ `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash` + `nvm list available && nvm install <version\>`
+2. pnpm 8+ `curl -fsSL https://get.pnpm.io/install.sh | sh -`
+3. Docker (for Postgres and Redis) `sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
 
 ```bash
 git clone https://github.com/NimbusSage/the-man.git
@@ -124,36 +128,36 @@ git push origin feature/my-awesome-feature
 
 ### v0.1.0 (current)
 
-- [x] Network discovery (ICMP, SNMP, RouterOS)
-- [x] Ping monitoring with metrics
-- [x] D3 interactive maps
-- [x] WebSocket real-time updates
-- [x] PostgreSQL storage (TimescaleDB extension enabled, hypertables not yet wired up)
-- [x] Basic alerting (email)
-- [x] Dude database import (file upload, full device/service/map/link/note/history import)
+- [X]  Network discovery (ICMP, SNMP, RouterOS)
+- [X]  Ping monitoring with metrics
+- [X]  D3 interactive maps
+- [X]  WebSocket real-time updates
+- [X]  PostgreSQL storage (TimescaleDB extension enabled, hypertables not yet wired up)
+- [X]  Basic alerting (email)
+- [X]  Dude database import (file upload, full device/service/map/link/note/history import)
 
 ### v0.5.0 (beta)
 
-- [ ] Full SNMP poller (ifTable, custom OIDs)
-- [ ] SSH/Telnet console proxy
-- [ ] Advanced alerting (escalations, schedules)
-- [ ] Multi-user RBAC
-- [ ] Plugin marketplace
-- [ ] Mobile app (PWA)
+- [ ]  Full SNMP poller (ifTable, custom OIDs)
+- [ ]  SSH/Telnet console proxy
+- [ ]  Advanced alerting (escalations, schedules)
+- [ ]  Multi-user RBAC
+- [ ]  Plugin marketplace
+- [ ]  Mobile app (PWA)
 
 ### v1.0.0
 
-- [ ] 10,000+ device validation
-- [ ] Layer 2 topology (CDP/LLDP)
-- [ ] NetFlow/sFlow integration
-- [ ] Live Dude import over SSH/RouterOS API (today it's file-upload only)
-- [ ] Comprehensive docs
+- [ ]  10,000+ device validation
+- [ ]  Layer 2 topology (CDP/LLDP)
+- [ ]  NetFlow/sFlow integration
+- [ ]  Live Dude import over SSH/RouterOS API (today it's file-upload only)
+- [ ]  Comprehensive docs
 
 ### Later
 
-- [ ] Multi-site federation
-- [ ] Custom dashboards
-- [ ] LDAP/SAML SSO
+- [ ]  Multi-site federation
+- [ ]  Custom dashboards
+- [ ]  LDAP/SAML SSO
 
 ## License
 
