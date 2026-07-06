@@ -223,7 +223,13 @@ async function start() {
     console.log('╚════════════════════════════════════════════════╝\n');
     server.log.info(`🌐 API Server: http://${config.host}:${config.port}`);
     server.log.info(`📡 WebSocket: ws://${config.host}:${config.port}`);
-    server.log.info(`📊 Monitoring: ${await prisma.device.count()} devices`);
+    let deviceCount = 'N/A';
+    try {
+      deviceCount = await prisma.device.count();
+    } catch {
+      // database not yet migrated — not an error
+    }
+    server.log.info(`📊 Monitoring: ${deviceCount} devices`);
     server.log.info(`🔧 Environment: ${config.env}`);
     server.log.info(`✅ Health Check: http://${config.host}:${config.port}/health\n`);
     
