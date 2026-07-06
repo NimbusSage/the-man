@@ -46,7 +46,10 @@ git clone https://github.com/NimbusSage/the-man.git
 cd the-man
 pnpm install
 
-docker-compose up -d
+# Copy to customize exposed host ports (e.g. if 3000 is already in use)
+cp .env.example .env
+
+docker compose up -d
 
 cd packages/backend
 cp .env.example .env
@@ -57,7 +60,7 @@ cd ../..
 pnpm dev  # starts backend + frontend
 ```
 
-Open `http://localhost:5173` and log in with `admin` / `admin`.
+Open `http://localhost:5173` (or the port set via `HOST_WEB_PORT` in `.env`) and log in with `admin` / `admin`.
 
 ## Architecture
 

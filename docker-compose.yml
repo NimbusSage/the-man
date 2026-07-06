@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-theman_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-theman}
     ports:
-      - "5432:5432"
+      - "${HOST_POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -23,7 +23,7 @@ services:
     image: redis:7-alpine
     container_name: theman-redis
     ports:
-      - "6379:6379"
+      - "${HOST_REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -45,8 +45,9 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       PORT: 3000
+      CORS_ORIGINS: http://localhost:${HOST_WEB_PORT:-5173}
     ports:
-      - "3000:3000"
+      - "${HOST_BACKEND_PORT:-3000}:3000"
     volumes:
       - ./packages/backend:/app/packages/backend
       - ./packages/shared:/app/packages/shared
@@ -87,10 +88,10 @@ services:
       dockerfile: docker/Dockerfile.web
     container_name: theman-web
     environment:
-      VITE_API_URL: http://localhost:3000
-      VITE_WS_URL: ws://localhost:3000
+      VITE_API_URL: http://localhost:${HOST_BACKEND_PORT:-3000}
+      VITE_WS_URL: ws://localhost:${HOST_BACKEND_PORT:-3000}
     ports:
-      - "5173:5173"
+      - "${HOST_WEB_PORT:-5173}:5173"
     volumes:
       - ./apps/web:/app/apps/web
       - ./packages/shared:/app/packages/shared
@@ -105,7 +106,7 @@ services:
     container_name: theman-prometheus
     profiles: ["monitoring"]
     ports:
-      - "9090:9090"
+      - "${HOST_PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -119,7 +120,7 @@ services:
     container_name: theman-grafana
     profiles: ["monitoring"]
     ports:
-      - "3001:3000"
+      - "${HOST_GRAFANA_PORT:-3001}:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
