@@ -41,8 +41,9 @@ async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}/api/${API_VERSION}${endpoint}`;
   const token = getToken();
   
+  const isFormData = options.body instanceof FormData;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
     ...options.headers,
   };
   
@@ -230,14 +231,17 @@ export const discovery = {
   },
 
   /**
-   * Import from MikroTik Dude server
-   * @param {Object} connection
-   * @returns {Promise<{devices: Array, maps: Array}>}
+   * Import a MikroTik Dude database file
+   * @param {File} file - a Dude .db export (plain or gzipped)
+   * @returns {Promise<{jobId: string, status: string}>}
    */
-  async importFromDude(connection) {
+  async importFromDude(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
     return await request('/discovery/import/dude', {
       method: 'POST',
-      body: JSON.stringify(connection),
+      body: formData,
     });
   },
 };

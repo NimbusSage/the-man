@@ -49,6 +49,7 @@ model Device {
   status      DeviceStatus @default(UNKNOWN)
   lastSeen    DateTime?   @map("last_seen")
   metadata    Json?
+  dudeId      Int?        @unique @map("dude_id")
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
@@ -59,6 +60,9 @@ model Device {
   alerts      Alert[]
   linksSource Link[]      @relation("LinkSource")
   linksTarget Link[]      @relation("LinkTarget")
+  notes       Note[]
+  outages     Outage[]
+  metrics     Metric[]
 
   @@index([ip])
   @@index([status])
@@ -85,11 +89,14 @@ model Service {
   status      ServiceStatus @default(UNKNOWN)
   lastCheck   DateTime?     @map("last_check")
   lastResult  Json?         @map("last_result")
+  dudeId      Int?          @unique @map("dude_id")
   createdAt   DateTime      @default(now()) @map("created_at")
 
   device      Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   alerts      Alert[]
   alertRules  AlertRule[]
+  outages     Outage[]
+  metrics     Metric[]
 
   @@index([deviceId])
   @@index([enabled])
@@ -111,6 +118,7 @@ model Map {
   layoutType      String    @default("auto") @map("layout_type")
   viewport        Json?
   metadata        Json?
+  dudeId          Int?      @unique @map("dude_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -118,6 +126,7 @@ model Map {
   submaps         Map[]     @relation("MapHierarchy")
   devices         Device[]
   links           Link[]
+  outages         Outage[]
 
   @@map("maps")
 }
@@ -133,6 +142,7 @@ model Link {
   bandwidthMbps    Int?     @map("bandwidth_mbps")
   label            String?
   metadata         Json?
+  dudeId           Int?     @unique @map("dude_id")
   createdAt        DateTime @default(now()) @map("created_at")
 
   map              Map      @relation(fields: [mapId], references: [id], onDelete: Cascade)
@@ -208,4 +218,71 @@ model AuditLog {
 
   @@index([timestamp])
   @@map("audit_logs")
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  deviceId  String?  @map("device_id")
+  text      String
+  dudeId    Int?     @unique @map("dude_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@map("notes")
+}
+
+model Outage {
+  id              String   @id @default(uuid())
+  deviceId        String?  @map("device_id")
+  serviceId       String?  @map("service_id")
+  mapId           String?  @map("map_id")
+  time            DateTime
+  status          Int
+  durationSeconds Int      @map("duration_seconds")
+
+  device          Device?  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  service         Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  map             Map?     @relation(fields: [mapId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, time])
+  @@index([serviceId, time])
+  @@map("outages")
+}
+
+model Metric {
+  id           String         @id @default(uuid())
+  deviceId     String?        @map("device_id")
+  serviceId    String?        @map("service_id")
+  name         String
+  unit         String?
+  dudeSourceId Int?           @unique @map("dude_source_id")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  device       Device?        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  service      Service?       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  samples      MetricSample[]
+
+  @@map("metrics")
+}
+
+enum MetricResolution {
+  RAW
+  TEN_MIN
+  TWO_HOUR
+  ONE_DAY
+}
+
+model MetricSample {
+  id         BigInt            @id @default(autoincrement())
+  metricId   String            @map("metric_id")
+  time       DateTime
+  resolution MetricResolution
+  value      Float
+
+  metric     Metric            @relation(fields: [metricId], references: [id], onDelete: Cascade)
+
+  @@index([metricId, time])
+  @@map("metric_samples")
 }

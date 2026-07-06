@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { discovery } from './services/api.js';
 
 export default function App() {
   const [health, setHealth] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('theman_token'));
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const dudeFileInputRef = useRef(null);
 
   useEffect(() => {
     fetch('http://localhost:3000/health')
@@ -62,6 +65,40 @@ export default function App() {
     localStorage.removeItem('theman_token');
     setToken(null);
     setDevices([]);
+  };
+
+  const handleDudeFileSelected = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const { jobId } = await discovery.importFromDude(file);
+
+      let job;
+      do {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        job = await discovery.getJob(jobId);
+      } while (job.status === 'running');
+
+      if (job.status === 'completed') {
+        const r = job.result;
+        alert(
+          `✅ Dude import complete!\n\n` +
+            `Devices: ${r.devices}\nServices: ${r.services}\nMaps: ${r.maps}\n` +
+            `Links: ${r.links}\nNotes: ${r.notes}\nMetrics: ${r.metrics}\n` +
+            `Outages: ${r.outages}\nMetric samples: ${r.metricSamples}` +
+            (r.warnings.length ? `\n\n${r.warnings.length} warning(s) - see server logs.` : '')
+        );
+        loadDevices();
+      } else {
+        alert('❌ Dude import failed: ' + (job.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('❌ Dude import error: ' + err.message);
+    }
+    setImporting(false);
   };
 
   if (!token) {
@@ -228,16 +265,28 @@ export default function App() {
           }}>
             🔍 Start Network Scan
           </button>
-          <button style={{ 
-            padding: '0.75rem 1.5rem', 
-            background: '#8b5cf6', 
-            color: 'white', 
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: 'bold'
-          }}>
-            📥 Import from Dude
+          <input
+            type="file"
+            accept=".db,.db.gz"
+            ref={dudeFileInputRef}
+            onChange={handleDudeFileSelected}
+            style={{ display: 'none' }}
+          />
+          <button
+            onClick={() => dudeFileInputRef.current?.click()}
+            disabled={importing}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#8b5cf6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: importing ? 'default' : 'pointer',
+              fontWeight: 'bold',
+              opacity: importing ? 0.6 : 1,
+            }}
+          >
+            {importing ? '⏳ Importing...' : '📥 Import from Dude'}
           </button>
           <button 
             onClick={loadDevices}

@@ -1,11 +1,13 @@
 import { authRoutes } from './auth.js';
 import { deviceRoutes } from './devices.js';
+import { discoveryRoutes } from './discovery.js';
 
 export async function setupRoutes(server) {
   // Register all route modules
   await authRoutes(server);
   await deviceRoutes(server);
-  
+  await discoveryRoutes(server);
+
   // Test endpoint
   server.get('/api/v1/test', async () => {
     return { status: 'ok', message: 'The MAN API is running!' };

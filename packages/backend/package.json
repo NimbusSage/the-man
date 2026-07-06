@@ -16,9 +16,11 @@
   "dependencies": {
     "@fastify/cors": "^8.5.0",
     "@fastify/jwt": "^7.2.3",
+    "@fastify/multipart": "^8.3.0",
     "@fastify/websocket": "^8.3.1",
     "@prisma/client": "5.22.0",
     "bcrypt": "^5.1.1",
+    "better-sqlite3": "^11.3.0",
     "bullmq": "^5.0.0",
     "dotenv": "16.3.1",
     "fastify": "4.25.0",

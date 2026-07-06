@@ -3,6 +3,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import multipart from '@fastify/multipart';
 import websocket from '@fastify/websocket';
 import { PrismaClient } from '@prisma/client';
 import { Redis } from 'ioredis';
@@ -69,6 +70,11 @@ async function registerPlugins() {
 
   // WebSocket support
   await server.register(websocket);
+
+  // Multipart file uploads (Dude database import)
+  await server.register(multipart, {
+    limits: { fileSize: 2 * 1024 * 1024 * 1024 }, // 2GB
+  });
 
   // Health check endpoint
   server.get('/health', async () => {
