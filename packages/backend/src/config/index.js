@@ -21,6 +21,6 @@ export const config = {
   },
   
   cors: {
-    origins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173']
+    origins: process.env.CORS_ORIGINS === 'true' ? true : (process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173'])
   }
 };

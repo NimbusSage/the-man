@@ -10,7 +10,7 @@ export default function App() {
   const dudeFileInputRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/health`)
+      fetch(`${import.meta.env.VITE_API_URL || ''}/health`)
       .then(r => r.json())
       .then(setHealth)
       .catch(console.error);
@@ -25,7 +25,7 @@ export default function App() {
   const loadDevices = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/devices`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/devices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -42,7 +42,7 @@ export default function App() {
     const password = e.target.password.value;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/auth/login`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })

@@ -42,10 +42,15 @@ JWT_SECRET=paste-the-generated-secret-here
 #   openssl rand -base64 24
 POSTGRES_PASSWORD=paste-a-strong-password-here
 
-# --- Domain ---
-CORS_ORIGINS=https://monitor.your-company.com
-VITE_API_URL=https://monitor.your-company.com
-VITE_WS_URL=wss://monitor.your-company.com
+# --- CORS ---
+# Set to "true" to reflect any origin (works for private IPs, dev, and domains).
+# For strict production, set to your exact origin:
+#   CORS_ORIGINS=https://monitor.your-company.com
+CORS_ORIGINS=true
+
+# --- Domain (optional — only needed if frontend talks to a separate backend
+#     origin). Leave empty for standard nginx-proxied deployments.
+# VITE_API_URL=https://monitor.your-company.com
 
 # --- Ports (optional overrides) ---
 # HOST_POSTGRES_PORT=5432
@@ -204,7 +209,7 @@ Or add `--profile monitoring` to the deploy command.
 - [ ] `POSTGRES_PASSWORD` is strong and unique
 - [ ] PostgreSQL and Redis ports are bound to `127.0.0.1` only (default in prod compose)
 - [ ] The web UI is behind HTTPS
-- [ ] CORS_ORIGINS is set to your actual domain (not `*`)
+- [ ] CORS_ORIGINS is set to your actual domain (not `true`) for strict production
 - [ ] Default admin password was changed on first login
 - [ ] The server's firewall blocks all ports except 80, 443, and SSH
 - [ ] Audit logging is enabled and logs are shipped off-host
