@@ -93,7 +93,6 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.web
-    image: theman-web:latest
     container_name: theman-web
     restart: unless-stopped
     ports:
