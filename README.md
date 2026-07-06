@@ -37,7 +37,7 @@ To use it: log in, click "Import from Dude," and pick your `.db` file (gzipped e
 
 You'll need(example commands for debian based linux):
 
-1. Node 20+ `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash` + `nvm list available && nvm install <version\>`
+1. Node 20+ `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash` + `nvm list available && nvm install <version>`
 2. pnpm 8+ `curl -fsSL https://get.pnpm.io/install.sh | sh -`
 3. Docker (for Postgres and Redis) `sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
 
