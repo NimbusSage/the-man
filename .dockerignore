@@ -1,0 +1,8 @@
+# Exclude environment files from Docker images
+.env
+**/.env
+
+# Exclude local dev files
+node_modules
+.git
+*.md

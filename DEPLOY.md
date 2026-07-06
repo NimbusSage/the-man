@@ -22,13 +22,13 @@ cp .env.example .env
 docker compose -f docker-compose.prod.yml up -d
 
 # Run database migrations
-docker compose -f docker-compose.prod.yml exec backend pnpm db:migrate
+docker compose -f docker-compose.prod.yml exec backend pnpm db:deploy
 
 # Seed admin user (if first deployment)
 docker compose -f docker-compose.prod.yml exec backend pnpm db:seed
 ```
 
-The web UI is served on port 5173 (or whatever `HOST_WEB_PORT` is set to).
+The web UI is served on port 80 (or whatever `HOST_WEB_PORT` is set to).
 
 ## Environment Configuration
 
@@ -39,8 +39,8 @@ Create a `.env` file in the project root. At minimum:
 #   openssl rand -base64 48
 JWT_SECRET=paste-the-generated-secret-here
 
-#   openssl rand -base64 24
-POSTGRES_PASSWORD=paste-a-strong-password-here
+#   openssl rand -hex 24
+POSTGRES_PASSWORD=paste-a-32-char-hex-string-here
 
 # --- CORS ---
 # Set to "true" to reflect any origin (works for private IPs, dev, and domains).
@@ -56,10 +56,10 @@ CORS_ORIGINS=true
 # HOST_POSTGRES_PORT=5432
 # HOST_REDIS_PORT=6379
 # HOST_BACKEND_PORT=3000
-# HOST_WEB_PORT=5173
+# HOST_WEB_PORT=80
 ```
 
-> **Security:** Never use the default dev passwords. Generate secrets with `openssl rand -base64 48` and keep your `.env` file out of version control (it's already in `.gitignore`).
+> **Security:** Never use the default dev passwords. Generate secrets with `openssl rand -hex 48` and keep your `.env` file out of version control (it's already in `.gitignore`). Use `openssl rand -hex 24` for POSTGRES_PASSWORD so the value is safe for database connection URLs.
 
 ## Database
 
@@ -67,7 +67,7 @@ Migrations and seeding are run via Docker exec:
 
 ```bash
 # Run pending migrations
-docker compose -f docker-compose.prod.yml exec backend pnpm db:migrate
+docker compose -f docker-compose.prod.yml exec backend pnpm db:deploy
 
 # Seed the admin user (idempotent — safe to re-run)
 docker compose -f docker-compose.prod.yml exec backend pnpm db:seed
@@ -77,7 +77,7 @@ The admin credentials default to `admin` / `admin`. Change the password immediat
 
 ## Reverse Proxy & SSL
 
-The web service in `docker-compose.prod.yml` serves HTTP on port 5173. You should terminate TLS at a reverse proxy.
+The web service in `docker-compose.prod.yml` serves HTTP on port 80. You should terminate TLS at a reverse proxy.
 
 ### Option A: Caddy (recommended — automatic HTTPS)
 
@@ -188,7 +188,7 @@ git pull
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Apply any new migrations
-docker compose -f docker-compose.prod.yml exec backend pnpm db:migrate
+docker compose -f docker-compose.prod.yml exec backend pnpm db:deploy
 ```
 
 This creates new containers without downtime (depending on image build time). For truly zero-downtime updates, use a rolling deploy strategy via Docker Swarm or Kubernetes.
