@@ -106,26 +106,13 @@ export class CustomHTTPPoller {
 }
 ```
 
-## Docker deployment
+## Deployment
 
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-docker-compose up -d --scale worker=5
-git pull && docker-compose up -d --build
-```
+See [DEPLOY.md](DEPLOY.md) for production deployment — Docker Compose, SSL, backups, scaling, and security hardening.
 
 ## Contributing
 
-Pull requests welcome. It's all plain JavaScript, no TypeScript build step, so `pnpm test` and a working `pnpm dev` are the bar for a PR.
-
-```bash
-git clone https://github.com/NimbusSage/the-man.git
-git checkout -b feature/my-awesome-feature
-# make changes
-pnpm test
-git commit -m "feat: add BGP neighbor monitoring"
-git push origin feature/my-awesome-feature
-```
+Pull requests welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow: development setup, coding standards, branch naming, commit conventions, and the PR process.
 
 ## Roadmap
 
