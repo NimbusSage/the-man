@@ -1,0 +1,33 @@
+{
+  "build": {
+    "devPath": "http://localhost:5173",
+    "distDir": "../../apps/web/dist",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "package": {
+    "productName": "The MAN",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "bundle": {
+      "identifier": "com.theman.app",
+      "icon": []
+    },
+    "windows": [
+      {
+        "title": "The MAN - Network Monitoring",
+        "width": 1400,
+        "height": 900,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "allowlist": {
+      "all": true
+    }
+  }
+}
