@@ -33,6 +33,7 @@
     "routeros-client": "^1.1.2",
     "socket.io": "^4.6.0",
     "ssh2": "^1.15.0",
+    "net-snmp": "^3.26.0",
     "undici": "^6.2.0"
   },
   "devDependencies": {
