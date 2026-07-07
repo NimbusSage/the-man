@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { discovery, auth } from './services/api';
 import Settings from './pages/Settings';
+import Maps from './pages/Maps';
 import PasswordChangeModal from './components/PasswordChangeModal';
 import DeviceList from './components/devices/DeviceList';
 
@@ -131,7 +132,7 @@ export default function App() {
     <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>The MAN Dashboard</h1>
+          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>The MAN {view === 'maps' ? 'Maps' : 'Dashboard'}</h1>
           <p style={{ color: '#666' }}>
             Backend: {health ? health.status : 'loading'} |
             Database: {health?.services?.database || 'unknown'} |
@@ -150,6 +151,13 @@ export default function App() {
               {importing ? 'Importing...' : 'Import from Dude'}
             </button>
           </div>
+          <button onClick={() => setView('maps')}
+            style={{
+              padding: '0.5rem 1rem', background: view === 'maps' ? '#3b82f6' : '#6b7280',
+              color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'
+            }}>
+            Maps
+          </button>
           <button onClick={() => setView(view === 'settings' ? 'dashboard' : 'settings')}
             style={{
               padding: '0.5rem 1rem', background: view === 'settings' ? '#22c55e' : '#6b7280',
@@ -167,7 +175,9 @@ export default function App() {
         </div>
       </div>
 
-      {view === 'settings' ? (
+      {view === 'maps' ? (
+        <Maps />
+      ) : view === 'settings' ? (
         <Settings user={user} />
       ) : (
         <DeviceList />
