@@ -47,7 +47,7 @@ function buildFilters(params) {
   const { status, search, mapId, deviceType, serviceStatus, acked } = params;
 
   if (status) {
-    clauses.push(`d.status = $${idx++}`);
+    clauses.push(`d.status = $${idx++}::"DeviceStatus"`);
     vals.push(status.toUpperCase());
   }
 
