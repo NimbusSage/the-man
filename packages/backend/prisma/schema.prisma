@@ -48,6 +48,10 @@ model Device {
   positionY   Float?      @map("position_y")
   icon        String?
   status      DeviceStatus @default(UNKNOWN)
+  acked       Boolean     @default(false)
+  ackedAt     DateTime?   @map("acked_at")
+  ackedBy     String?     @map("acked_by")
+  ackNote     String?     @map("ack_note")
   lastSeen    DateTime?   @map("last_seen")
   metadata    Json?
   dudeId      Int?        @unique @map("dude_id")

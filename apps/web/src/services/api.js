@@ -152,12 +152,29 @@ export const devices = {
   /**
    * List all devices
    * @param {Object} params - Query parameters
-   * @returns {Promise<Array>}
+   * @returns {Promise<{devices: Array, total: number, limit: number, offset: number}>}
    */
   async list(params = {}) {
     const query = new URLSearchParams(params).toString();
     const endpoint = `/devices${query ? `?${query}` : ''}`;
     return await request(endpoint);
+  },
+
+  /**
+   * Export devices list
+   * @param {Object} params - Same filter params as list()
+   * @param {'csv'|'json'} format
+   * @returns {Promise<Blob>}
+   */
+  async exportList(params = {}, format = 'csv') {
+    const query = new URLSearchParams({ ...params, export: format }).toString();
+    const url = `${API_BASE_URL}/api/${API_VERSION}/devices?${query}`;
+    const token = getToken();
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error(`Export failed: ${response.status}`);
+    return await response.blob();
   },
 
   /**
@@ -203,6 +220,27 @@ export const devices = {
     return await request(`/devices/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  /**
+   * Ack/unack a device (suppress alerts)
+   * @param {string} id
+   * @param {Object} data - { acked: boolean, note?: string }
+   * @returns {Promise<Object>}
+   */
+  async ack(id, data) {
+    return await request(`/devices/${id}/ack`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Get distinct device types
+   * @returns {Promise<string[]>}
+   */
+  async types() {
+    return await request('/devices/types');
   },
 
   /**
@@ -265,15 +303,25 @@ export const discovery = {
 
 export const maps = {
   /**
-   * List all maps
+   * Get full map tree (nested hierarchy)
    * @returns {Promise<Array>}
    */
-  async list() {
-    return await request('/maps');
+  async tree() {
+    return await request('/maps/tree');
   },
 
   /**
-   * Get map by ID with devices and links
+   * List all maps (flat)
+   * @param {Object} params
+   * @returns {Promise<Array>}
+   */
+  async list(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await request(`/maps${query ? `?${query}` : ''}`);
+  },
+
+  /**
+   * Get map by ID with devices and submaps
    * @param {string} id
    * @returns {Promise<Object>}
    */
