@@ -1,6 +1,6 @@
 import snmp from 'net-snmp';
 import { BasePoller } from './BasePoller.js';
-import { SNMP_OIDS } from '@theman/shared/src/constants.js';
+import { SNMP_OIDS } from '@theman/shared/constants';
 
 export class SNMPPoller extends BasePoller {
   createSession(device) {

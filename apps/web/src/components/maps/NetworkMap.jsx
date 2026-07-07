@@ -49,7 +49,7 @@ function drawShape(g, shape, size, color) {
 export const NetworkMap = ({
   map, devices, links,
   onDeviceClick, onDeviceContextMenu, onCanvasContextMenu, onLinkContextMenu,
-  onDeviceMove, readonly, selectedDevice,
+  onDeviceMove, readonly, selectedDevice, zoomRef,
 }) => {
   const svgRef = useRef(null);
   const [internalSelected, setInternalSelected] = useState(null);
@@ -57,24 +57,37 @@ export const NetworkMap = ({
   const sel = selectedDevice !== undefined ? selectedDevice : internalSelected;
 
   useEffect(() => {
-    if (!svgRef.current || !devices) return;
+    let sim = null;
     const svg = d3.select(svgRef.current);
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
     svg.selectAll('*').remove();
+    svg.node().__zoom = null;
+
+    svg.on('contextmenu', (event) => {
+      event.preventDefault();
+      if (onCanvasContextMenu) onCanvasContextMenu(event);
+    });
 
     const defs = svg.append('defs');
     defs.append('pattern').attr('id', 'grid').attr('width', 40).attr('height', 40).attr('patternUnits', 'userSpaceOnUse')
       .append('path').attr('d', 'M 40 0 L 0 0 0 40').attr('fill', 'none').attr('stroke', '#2a2a4a').attr('stroke-width', 0.5);
 
+    if (!devices || devices.length === 0) return () => { if (zoomRef) zoomRef.current = null; };
+
+    const width = svgRef.current.clientWidth;
+    const height = svgRef.current.clientHeight;
+
     const g = svg.append('g');
 
     const zoom = d3.zoom().scaleExtent([0.1, 4]).on('zoom', (event) => g.attr('transform', event.transform));
     svg.call(zoom);
-    svg.on('contextmenu', (event) => {
-      event.preventDefault();
-      if (onCanvasContextMenu) onCanvasContextMenu(event);
-    });
+    if (zoomRef) {
+      const svgSel = d3.select(svgRef.current);
+      zoomRef.current = {
+        zoomIn: () => svgSel.transition().duration(300).call(zoom.scaleBy, 1.3),
+        zoomOut: () => svgSel.transition().duration(300).call(zoom.scaleBy, 0.7),
+        resetView: () => svgSel.transition().duration(300).call(zoom.transform, d3.zoomIdentity),
+      };
+    }
 
     g.append('rect').attr('width', width).attr('height', height).attr('fill', 'url(#grid)');
 
@@ -88,7 +101,7 @@ export const NetworkMap = ({
       target: devices.find(d => d.id === link.targetDeviceId || d.id === link.target_device_id),
     })).filter(link => link.source && link.target);
 
-    const sim = d3.forceSimulation(devices)
+    sim = d3.forceSimulation(devices)
       .force('link', d3.forceLink(linkData).id(d => d.id).distance(160))
       .force('charge', d3.forceManyBody().strength(-400))
       .force('center', d3.forceCenter(width / 2, height / 2))
@@ -156,7 +169,10 @@ export const NetworkMap = ({
       node.attr('transform', d => `translate(${d.positionX || d.position_x || d.x},${d.positionY || d.position_y || d.y})`);
     });
 
-    return () => sim.stop();
+    return () => {
+      if (sim) sim.stop();
+      if (zoomRef) zoomRef.current = null;
+    };
   }, [devices, links, map, sel, readonly, onDeviceClick, onDeviceContextMenu, onCanvasContextMenu, onLinkContextMenu, onDeviceMove]);
 
   return (

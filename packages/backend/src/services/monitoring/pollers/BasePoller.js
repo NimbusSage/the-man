@@ -1,18 +1,18 @@
 export class BasePoller {
   async poll(device, service) {
-    throw new Error(`${this.getType()}: poll() not implemented`);
+    throw new Error('poll() not implemented');
   }
 
   validateConfig(config) {
-    throw new Error(`${this.getType()}: validateConfig() not implemented`);
+    throw new Error('validateConfig() not implemented');
   }
 
   getDefaultConfig() {
-    throw new Error(`${this.getType()}: getDefaultConfig() not implemented`);
+    throw new Error('getDefaultConfig() not implemented');
   }
 
   getType() {
-    throw new Error(`${this.getType()}: getType() not implemented`);
+    throw new Error('getType() not implemented');
   }
 
   getName() {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { maps as mapsApi, devices as devicesApi, services as servicesApi } from '../services/api';
 import NetworkMap from '../components/maps/NetworkMap';
 import ContextMenu from '../components/maps/ContextMenu';
@@ -6,6 +6,7 @@ import DeviceProperties from '../components/maps/DeviceProperties';
 import MapToolbar from '../components/maps/MapToolbar';
 
 export default function Maps() {
+  const zoomRef = useRef(null);
   const [mapTree, setMapTree] = useState([]);
   const [currentMap, setCurrentMap] = useState(null);
   const [devices, setDevices] = useState([]);
@@ -115,18 +116,22 @@ export default function Maps() {
   }, [currentMap]);
 
   const handleZoomIn = useCallback(() => {
-    const svg = document.querySelector('#network-map-svg');
-    if (svg) {
-      const zoom = d3ZoomFromSvg(svg);
-      if (zoom) zoom.scaleBy(svg.__zoom?.k * 1.3 || 1.3);
-    }
+    if (zoomRef.current?.zoomIn) zoomRef.current.zoomIn();
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    if (zoomRef.current?.zoomOut) zoomRef.current.zoomOut();
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    if (zoomRef.current?.resetView) zoomRef.current.resetView();
   }, []);
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 100px)', fontFamily: 'Segoe UI, sans-serif', color: '#e2e8f0' }}>
       <div style={{ width: '240px', background: '#1a1a2e', borderRight: '1px solid #333', overflowY: 'auto', padding: '12px' }}>
         <h3 style={{ fontSize: '14px', fontWeight: 600, margin: '0 0 12px', color: '#999', textTransform: 'uppercase', letterSpacing: '1px' }}>Maps</h3>
-        <MapTreeNode node={mapTree} currentId={currentMap?.id} onClick={(node) => navigateToMap(node, [node])} />
+        <MapTreeNode nodes={mapTree} currentId={currentMap?.id} onNavigate={(node) => navigateToMap(node, [node])} />
       </div>
       <div style={{ flex: 1, position: 'relative' }}>
         {breadcrumb.length > 0 && (
@@ -142,8 +147,8 @@ export default function Maps() {
         )}
         <MapToolbar
           onZoomIn={handleZoomIn}
-          onZoomOut={useCallback(() => {}, [])}
-          onResetView={useCallback(() => {}, [])}
+          onZoomOut={handleZoomOut}
+          onResetView={handleResetView}
           onAddDevice={() => {
             const name = prompt('Device name:');
             if (!name || !currentMap) return;
@@ -159,6 +164,7 @@ export default function Maps() {
           map={currentMap}
           devices={devices}
           links={links}
+          zoomRef={zoomRef}
           onDeviceClick={handleDeviceClick}
           onDeviceContextMenu={handleDeviceContextMenu}
           onCanvasContextMenu={handleCanvasContextMenu}
@@ -177,19 +183,19 @@ export default function Maps() {
   );
 }
 
-function MapTreeNode({ node, currentId, depth = 0 }) {
-  if (!node) return null;
-  if (Array.isArray(node)) {
+function MapTreeNode({ nodes, currentId, onNavigate, depth = 0 }) {
+  if (!nodes) return null;
+  if (Array.isArray(nodes)) {
     return (
       <div>
-        {node.map(n => <MapTreeNode key={n.id} node={n} currentId={currentId} depth={depth} />)}
+        {nodes.map(n => <MapTreeNode key={n.id} nodes={n} currentId={currentId} onNavigate={onNavigate} depth={depth} />)}
       </div>
     );
   }
-  const isCurrent = node.id === currentId;
+  const isCurrent = nodes.id === currentId;
   return (
     <div>
-      <div onClick={() => node.onClick ? node.onClick(node) : {}}
+      <div onClick={() => onNavigate(nodes)}
         style={{
           padding: '6px 8px 6px ' + (depth * 16 + 8) + 'px', cursor: 'pointer', borderRadius: '4px',
           background: isCurrent ? '#2d5270' : 'transparent', fontSize: '13px',
@@ -197,11 +203,11 @@ function MapTreeNode({ node, currentId, depth = 0 }) {
         }}
         onMouseEnter={e => { if (!isCurrent) e.target.style.background = '#2a2a3e'; }}
         onMouseLeave={e => { if (!isCurrent) e.target.style.background = 'transparent'; }}>
-        {node.name}
-        {node.deviceCount > 0 && <span style={{ color: '#666', marginLeft: '6px', fontSize: '11px' }}>({node.deviceCount})</span>}
+        {nodes.name}
+        {nodes.deviceCount > 0 && <span style={{ color: '#666', marginLeft: '6px', fontSize: '11px' }}>({nodes.deviceCount})</span>}
       </div>
-      {node.submaps && node.submaps.map(sm => (
-        <MapTreeNode key={sm.id} node={sm} currentId={currentId} depth={depth + 1} />
+      {nodes.submaps && nodes.submaps.map(sm => (
+        <MapTreeNode key={sm.id} nodes={sm} currentId={currentId} onNavigate={onNavigate} depth={depth + 1} />
       ))}
     </div>
   );
