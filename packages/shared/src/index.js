@@ -1,1 +1,1 @@
-export const APP_NAME = 'The MAN';
+export { THEME_DUDE_CLASSIC, SNMP_OIDS, DEVICE_SHAPES, STATUS_COLORS, APP_NAME } from './constants.js';
