@@ -12,7 +12,6 @@ export async function authRoutes(server) {
         return reply.code(400).send({ error: 'Username and password required' });
       }
 
-      // Access prisma from server instance
       const prisma = server.prisma;
       
       if (!prisma) {
@@ -23,7 +22,6 @@ export async function authRoutes(server) {
         });
       }
 
-      // Find user with proper error handling
       let user;
       try {
         user = await prisma.user.findUnique({
@@ -42,7 +40,6 @@ export async function authRoutes(server) {
         return reply.code(401).send({ error: 'Invalid credentials' });
       }
 
-      // Verify password
       let validPassword = false;
       try {
         validPassword = await bcrypt.compare(password, user.passwordHash);
@@ -59,7 +56,6 @@ export async function authRoutes(server) {
         return reply.code(401).send({ error: 'Invalid credentials' });
       }
 
-      // Generate JWT token
       let token;
       try {
         token = server.jwt.sign({
@@ -75,7 +71,6 @@ export async function authRoutes(server) {
         });
       }
 
-      // Update last login
       try {
         await prisma.user.update({
           where: { id: user.id },
@@ -83,7 +78,6 @@ export async function authRoutes(server) {
         });
       } catch (updateError) {
         request.log.warn('Failed to update last login:', updateError);
-        // Don't fail the login just because lastLogin update failed
       }
 
       request.log.info(`Successful login for user: ${username}`);
@@ -94,7 +88,8 @@ export async function authRoutes(server) {
           id: user.id,
           username: user.username,
           email: user.email,
-          role: user.role
+          role: user.role,
+          mustChangePassword: user.mustChangePassword
         }
       });
 
@@ -125,6 +120,7 @@ export async function authRoutes(server) {
           username: true,
           email: true,
           role: true,
+          mustChangePassword: true,
           lastLogin: true
         }
       });
@@ -140,6 +136,71 @@ export async function authRoutes(server) {
     }
   });
 
+  // Change password
+  server.patch('/api/v1/auth/password', {
+    onRequest: [server.authenticate]
+  }, async (request, reply) => {
+    try {
+      const { currentPassword, newPassword } = request.body;
+
+      if (!currentPassword || !newPassword) {
+        return reply.code(400).send({ error: 'Current password and new password are required' });
+      }
+
+      if (newPassword.length < 8) {
+        return reply.code(400).send({ error: 'New password must be at least 8 characters' });
+      }
+
+      if (currentPassword === newPassword) {
+        return reply.code(400).send({ error: 'New password must differ from current password' });
+      }
+
+      const prisma = server.prisma;
+      
+      if (!prisma) {
+        return reply.code(500).send({ error: 'Database connection not available' });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: request.user.id }
+      });
+
+      if (!user) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      const validPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!validPassword) {
+        return reply.code(401).send({ error: 'Current password is incorrect' });
+      }
+
+      const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash: newPasswordHash,
+          mustChangePassword: false
+        }
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'PASSWORD_CHANGE',
+          ipAddress: request.ip
+        }
+      });
+
+      request.log.info(`Password changed for user: ${user.username}`);
+      return reply.send({ success: true, message: 'Password changed successfully' });
+
+    } catch (error) {
+      request.log.error('Password change error:', error);
+      return reply.code(500).send({ error: 'Failed to change password' });
+    }
+  });
+
   // Logout (client-side token removal, but log it)
   server.post('/api/v1/auth/logout', {
     onRequest: [server.authenticate]
@@ -151,7 +212,6 @@ export async function authRoutes(server) {
         return reply.code(500).send({ error: 'Database connection not available' });
       }
 
-      // Log logout event
       await prisma.auditLog.create({
         data: {
           userId: request.user.id,

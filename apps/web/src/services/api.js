@@ -129,6 +129,19 @@ async login(username, password) {
   async me() {
     return await request('/auth/me');
   },
+
+  /**
+   * Change password for current user
+   * @param {string} currentPassword
+   * @param {string} newPassword
+   * @returns {Promise<Object>}
+   */
+  async changePassword(currentPassword, newPassword) {
+    return await request('/auth/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
 };
 
 // ============================================================================
@@ -479,6 +492,56 @@ export const alertRules = {
 };
 
 // ============================================================================
+// Users API
+// ============================================================================
+
+export const users = {
+  /**
+   * List all users (admin only)
+   * @returns {Promise<Array>}
+   */
+  async list() {
+    return await request('/users');
+  },
+
+  /**
+   * Create user (admin only)
+   * @param {Object} data - { username, email?, password, role? }
+   * @returns {Promise<Object>}
+   */
+  async create(data) {
+    return await request('/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update user (admin only)
+   * @param {string} id
+   * @param {Object} data - { email?, role?, password? }
+   * @returns {Promise<Object>}
+   */
+  async update(id, data) {
+    return await request(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete user (admin only)
+   * @param {string} id
+   * @returns {Promise<Object>}
+   */
+  async delete(id) {
+    return await request(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ============================================================================
 // System API
 // ============================================================================
 
@@ -535,5 +598,6 @@ export default {
   services,
   alerts,
   alertRules,
+  users,
   system,
 };

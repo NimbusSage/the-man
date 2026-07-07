@@ -153,6 +153,20 @@ async function setupAPI() {
     }
   });
 
+  // Role-based authorization decorator
+  server.decorate('requireRole', function(...roles) {
+    return async function(request, reply) {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+      }
+      if (!roles.includes(request.user.role)) {
+        return reply.code(403).send({ error: 'Forbidden', message: 'Insufficient permissions' });
+      }
+    };
+  });
+
   // Inject services into request context
   server.decorateRequest('services', null);
   server.addHook('onRequest', async (request) => {

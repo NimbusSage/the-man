@@ -1,12 +1,14 @@
 import { authRoutes } from './auth.js';
 import { deviceRoutes } from './devices.js';
 import { discoveryRoutes } from './discovery.js';
+import { userRoutes } from './users.js';
 
 export async function setupRoutes(server) {
   // Register all route modules
   await authRoutes(server);
   await deviceRoutes(server);
   await discoveryRoutes(server);
+  await userRoutes(server);
 
   // Test endpoint
   server.get('/api/v1/test', async () => {

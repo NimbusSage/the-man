@@ -10,18 +10,19 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  username      String    @unique
-  email         String?   @unique
-  passwordHash  String    @map("password_hash")
-  role          UserRole  @default(VIEWER)
-  permissions   Json?
-  lastLogin     DateTime? @map("last_login")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id                 String    @id @default(uuid())
+  username           String    @unique
+  email              String?   @unique
+  passwordHash       String    @map("password_hash")
+  role               UserRole  @default(VIEWER)
+  mustChangePassword Boolean   @default(true) @map("must_change_password")
+  permissions        Json?
+  lastLogin          DateTime? @map("last_login")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
   
-  alerts        Alert[]   @relation("AlertAcknowledgedBy")
-  auditLogs     AuditLog[]
+  alerts             Alert[]   @relation("AlertAcknowledgedBy")
+  auditLogs          AuditLog[]
 
   @@map("users")
 }

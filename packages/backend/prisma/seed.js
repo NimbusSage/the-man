@@ -16,7 +16,8 @@ async function main() {
       username: 'admin',
       email: 'admin@theman.local',
       passwordHash,
-      role: 'ADMIN'
+      role: 'ADMIN',
+      mustChangePassword: true
     }
   });
 
