@@ -7,25 +7,54 @@ export async function deviceRoutes(server) {
   server.get('/api/v1/devices', {
     onRequest: [server.authenticate]
   }, async (request) => {
-    const { status, search, limit = 100, offset = 0 } = request.query;
+    const {
+      status,
+      search,
+      limit = 100,
+      offset = 0,
+      sortBy = 'name',
+      sortOrder = 'asc'
+    } = request.query;
 
     const where = {};
     if (status) where.status = status.toUpperCase();
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { ip: { contains: search } }
+        { ip: { contains: search } },
+        { macAddress: { contains: search, mode: 'insensitive' } },
+        { vendor: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } },
+        { deviceType: { contains: search, mode: 'insensitive' } }
       ];
     }
 
-    const devices = await prisma.device.findMany({
-      where,
-      take: parseInt(limit),
-      skip: parseInt(offset),
-      orderBy: { name: 'asc' }
-    });
+    const orderMap = {
+      name: 'name',
+      ip: 'ip',
+      macAddress: 'macAddress',
+      deviceType: 'deviceType',
+      status: 'status',
+      vendor: 'vendor',
+      model: 'model',
+      osVersion: 'osVersion',
+      lastSeen: 'lastSeen'
+    };
 
-    return devices;
+    const orderBy = orderMap[sortBy] || 'name';
+    const orderDirection = sortOrder === 'desc' ? 'desc' : 'asc';
+
+    const [devices, total] = await Promise.all([
+      prisma.device.findMany({
+        where,
+        take: parseInt(limit),
+        skip: parseInt(offset),
+        orderBy: { [orderBy]: orderDirection }
+      }),
+      prisma.device.count({ where })
+    ]);
+
+    return { devices, total, limit: parseInt(limit), offset: parseInt(offset) };
   });
 
   // Get single device

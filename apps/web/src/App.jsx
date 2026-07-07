@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { discovery, auth } from './services/api';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { discovery, auth, devices as apiDevices } from './services/api';
 import Settings from './pages/Settings';
 import PasswordChangeModal from './components/PasswordChangeModal';
 
@@ -8,11 +8,23 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('theman_token'));
   const [user, setUser] = useState(null);
   const [devices, setDevices] = useState([]);
+  const [totalDevices, setTotalDevices] = useState(0);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [view, setView] = useState('dashboard');
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(50);
+  const [selectedDevices, setSelectedDevices] = useState(new Set());
+  const [expandedDevice, setExpandedDevice] = useState(null);
   const dudeFileInputRef = useRef(null);
+  const searchRef = useRef('');
+  const sortByRef = useRef('name');
+  const sortOrderRef = useRef('asc');
+  const pageRef = useRef(0);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || ''}/health`)
@@ -32,23 +44,80 @@ export default function App() {
         localStorage.removeItem('theman_token');
         setToken(null);
       });
-      loadDevices();
     }
   }, [token]);
 
-  const loadDevices = async () => {
+  const searchTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (!token) return;
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => loadDevices(), 300);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [token, search, sortBy, sortOrder, page]);
+
+  const loadDevices = useCallback(async (opts = {}) => {
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/devices`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setDevices(data);
+      const s = opts.search !== undefined ? opts.search : searchRef.current;
+      const sb = opts.sortBy !== undefined ? opts.sortBy : sortByRef.current;
+      const so = opts.sortOrder !== undefined ? opts.sortOrder : sortOrderRef.current;
+      const p = opts.page !== undefined ? opts.page : pageRef.current;
+
+      const params = { limit: pageSize, offset: p * pageSize, sortBy: sb, sortOrder: so };
+      if (s) params.search = s;
+
+      const data = await apiDevices.list(params);
+      setDevices(data.devices);
+      setTotalDevices(data.total);
     } catch (err) {
       console.error('Failed to load devices:', err);
     }
     setLoading(false);
+  }, [pageSize]);
+
+  const handleSort = (column) => {
+    const newOrder = sortByRef.current === column && sortOrderRef.current === 'asc' ? 'desc' : 'asc';
+    sortByRef.current = column;
+    sortOrderRef.current = newOrder;
+    pageRef.current = 0;
+    setSortBy(column);
+    setSortOrder(newOrder);
+    setPage(0);
+    setExpandedDevice(null);
   };
+
+  const handleSearch = (e) => {
+    searchRef.current = e.target.value;
+    pageRef.current = 0;
+    setSearch(e.target.value);
+    setPage(0);
+    setExpandedDevice(null);
+  };
+
+  const goToPage = (p) => {
+    pageRef.current = p;
+    setPage(p);
+    setExpandedDevice(null);
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedDevices(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDevices.size === devices.length) {
+      setSelectedDevices(new Set());
+    } else {
+      setSelectedDevices(new Set(devices.map(d => d.id)));
+    }
+  };
+
+  const totalPages = Math.ceil(totalDevices / pageSize);
 
   const login = async (e) => {
     e.preventDefault();
@@ -190,7 +259,7 @@ export default function App() {
           <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>The MAN Dashboard</h1>
           <p style={{ color: '#666' }}>
             Backend: {health ? health.status : 'loading'} |
-            Devices: {devices.length} |
+            Devices: {totalDevices} |
             Database: {health?.services?.database || 'unknown'} |
             Logged in as: <strong>{user?.username}</strong> ({user?.role})
           </p>
@@ -238,45 +307,136 @@ export default function App() {
             boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
             marginBottom: '2rem'
           }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Monitored Devices</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.5rem' }}>Monitored Devices</h2>
+              <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                {totalDevices} device{totalDevices !== 1 ? 's' : ''}
+                {selectedDevices.size > 0 && ` (${selectedDevices.size} selected)`}
+              </span>
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <input
+                type="text"
+                placeholder="Search name, IP, MAC, vendor, model, type..."
+                value={search}
+                onChange={handleSearch}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
             {loading ? (
-              <p>Loading devices...</p>
+              <p style={{ color: '#6b7280' }}>Loading devices...</p>
             ) : devices.length === 0 ? (
-              <p style={{ color: '#666' }}>No devices found. Start a network scan to discover devices!</p>
+              <p style={{ color: '#6b7280' }}>
+                {search ? 'No devices match your search.' : 'No devices found. Start a network scan or import from Dude!'}
+              </p>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={thStyle}>Name</th>
-                    <th style={thStyle}>IP Address</th>
-                    <th style={thStyle}>Type</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Vendor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {devices.map(device => (
-                    <tr key={device.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={tdStyle}>{device.name}</td>
-                      <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{device.ip}</td>
-                      <td style={tdStyle}>{device.deviceType}</td>
-                      <td style={tdStyle}>
-                        <span style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '12px',
-                          fontSize: '0.875rem',
-                          fontWeight: 'bold',
-                          background: device.status === 'UP' ? '#d1fae5' : '#fee2e2',
-                          color: device.status === 'UP' ? '#065f46' : '#991b1b'
-                        }}>
-                          {device.status}
-                        </span>
-                      </td>
-                      <td style={tdStyle}>{device.vendor || 'Unknown'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                        <th style={{ ...thStyle, width: '2rem' }}>
+                          <input type="checkbox" onChange={toggleSelectAll} checked={selectedDevices.size === devices.length && devices.length > 0} />
+                        </th>
+                        <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
+                          Name {sortBy === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('ip')}>
+                          IP Address {sortBy === 'ip' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('macAddress')}>
+                          MAC Address {sortBy === 'macAddress' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviceType')}>
+                          Type {sortBy === 'deviceType' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+                          Status {sortBy === 'status' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('vendor')}>
+                          Vendor {sortBy === 'vendor' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ ...thStyle }}>Model</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {devices.map(device => (
+                        <React.Fragment key={device.id}>
+                          <tr
+                            style={{
+                              borderBottom: '1px solid #e5e7eb',
+                              background: selectedDevices.has(device.id) ? '#f0fdf4' : 'transparent',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => setExpandedDevice(expandedDevice === device.id ? null : device.id)}
+                          >
+                            <td style={tdStyle} onClick={e => e.stopPropagation()}>
+                              <input type="checkbox" checked={selectedDevices.has(device.id)} onChange={() => toggleSelect(device.id)} />
+                            </td>
+                            <td style={{ ...tdStyle, fontWeight: 500 }}>{device.name}</td>
+                            <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{device.ip}</td>
+                            <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: '0.8rem' }}>{device.macAddress || '-'}</td>
+                            <td style={tdStyle}>{device.deviceType}</td>
+                            <td style={tdStyle}>
+                              <span style={statusBadge(device.status)}>{device.status}</span>
+                            </td>
+                            <td style={tdStyle}>{device.vendor || '-'}</td>
+                            <td style={tdStyle}>{device.model || '-'}</td>
+                          </tr>
+                          {expandedDevice === device.id && (
+                            <tr style={{ background: '#f9fafb' }}>
+                              <td colSpan={8} style={{ padding: '1rem 0.75rem' }}>
+                                <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                                  <div><strong>OS/Version:</strong> {device.osVersion || '-'}</div>
+                                  <div><strong>Last Seen:</strong> {device.lastSeen ? new Date(device.lastSeen).toLocaleString() : '-'}</div>
+                                  <div><strong>Map ID:</strong> {device.mapId || '-'}</div>
+                                  <div><strong>Dude ID:</strong> {device.dudeId ?? '-'}</div>
+                                  <div><strong>Position:</strong> {device.positionX != null ? `${device.positionX}, ${device.positionY}` : '-'}</div>
+                                  <div><strong>Icon:</strong> {device.icon || '-'}</div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                    Page {page + 1} of {totalPages || 1}
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    <button onClick={() => goToPage(0)} disabled={page === 0} style={pageBtnStyle} title="First page">«</button>
+                    <button onClick={() => goToPage(page - 1)} disabled={page === 0} style={pageBtnStyle} title="Previous page">‹</button>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const start = Math.max(0, Math.min(page - 2, totalPages - 5));
+                      const p = start + i;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => goToPage(p)}
+                          style={{ ...pageBtnStyle, background: p === page ? '#3b82f6' : 'white', color: p === page ? 'white' : '#374151', fontWeight: p === page ? 'bold' : 'normal' }}
+                        >
+                          {p + 1}
+                        </button>
+                      );
+                    })}
+                    <button onClick={() => goToPage(page + 1)} disabled={page >= totalPages - 1} style={pageBtnStyle} title="Next page">›</button>
+                    <button onClick={() => goToPage(totalPages - 1)} disabled={page >= totalPages - 1} style={pageBtnStyle} title="Last page">»</button>
+                  </div>
+                  <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                    {page * pageSize + 1}–{Math.min((page + 1) * pageSize, totalDevices)} of {totalDevices}
+                  </span>
+                </div>
+              </>
             )}
           </div>
 
@@ -355,16 +515,45 @@ const inputStyle = {
   boxSizing: 'border-box'
 };
 
+const statusColor = {
+  UP: { bg: '#d1fae5', fg: '#065f46' },
+  DOWN: { bg: '#fee2e2', fg: '#991b1b' },
+  UNKNOWN: { bg: '#fef3c7', fg: '#92400e' },
+  WARNING: { bg: '#ffedd5', fg: '#9a3412' },
+};
+
+const statusBadge = (status) => ({
+  padding: '0.25rem 0.75rem',
+  borderRadius: '12px',
+  fontSize: '0.8rem',
+  fontWeight: 'bold',
+  background: (statusColor[status] || statusColor.UNKNOWN).bg,
+  color: (statusColor[status] || statusColor.UNKNOWN).fg,
+});
+
+const pageBtnStyle = {
+  padding: '0.35rem 0.65rem',
+  border: '1px solid #d1d5db',
+  borderRadius: '4px',
+  background: 'white',
+  color: '#374151',
+  fontSize: '0.85rem',
+  cursor: 'pointer',
+  minWidth: '2rem',
+};
+
 const thStyle = {
   padding: '0.75rem',
   textAlign: 'left',
   fontSize: '0.8rem',
   fontWeight: 'bold',
   color: '#6b7280',
-  textTransform: 'uppercase'
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
 };
 
 const tdStyle = {
   padding: '0.75rem',
-  fontSize: '0.9rem'
+  fontSize: '0.9rem',
+  whiteSpace: 'nowrap',
 };
