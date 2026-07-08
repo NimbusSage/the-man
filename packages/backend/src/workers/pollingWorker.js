@@ -3,7 +3,10 @@ import { Worker } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
 import '../services/monitoring/PollerRegistry.js';
 
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+});
 const prisma = new PrismaClient();
 
 const worker = new Worker('theman-polling', async (job) => {

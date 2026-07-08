@@ -21,8 +21,8 @@ export const prisma = new PrismaClient({
 
 // Initialize Redis
 export const redis = new Redis(config.redis.url, {
-  maxRetriesPerRequest: 3,
-  enableReadyCheck: true,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
 });
 
 // Initialize Fastify
