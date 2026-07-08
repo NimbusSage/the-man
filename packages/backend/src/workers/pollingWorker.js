@@ -6,7 +6,7 @@ import '../services/monitoring/PollerRegistry.js';
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 const prisma = new PrismaClient();
 
-const worker = new Worker('theman:polling', async (job) => {
+const worker = new Worker('theman-polling', async (job) => {
   const { deviceId, serviceId, type } = job.data;
   const { getPoller } = await import('../services/monitoring/PollerRegistry.js');
   const poller = getPoller(type);

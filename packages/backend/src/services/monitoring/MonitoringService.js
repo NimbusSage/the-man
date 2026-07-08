@@ -12,9 +12,9 @@ export class MonitoringService extends EventEmitter {
   }
 
   async start() {
-    this.queue = new Queue('theman:polling', { connection: this.redis });
+    this.queue = new Queue('theman-polling', { connection: this.redis });
 
-    this.worker = new Worker('theman:polling', async (job) => {
+    this.worker = new Worker('theman-polling', async (job) => {
       const { deviceId, serviceId, type, config } = job.data;
       const { getPoller } = await import('./PollerRegistry.js');
       const poller = getPoller(type);
